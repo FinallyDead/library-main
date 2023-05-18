@@ -701,15 +701,18 @@ export default {
       }
     },
     exportToExcel(type, fn){
-      //process.stdout.on('data', (data) => {let result = data.toString();console.log(result)})
-      let l = this.limit;
-      this.limit = this.collections.length;
-      let elt = document.getElementById('tbl_exporttable_to_xls');
-      let wb = XLSX.utils.table_to_book(elt, { sheet: "sheet1" });
-      this.limit = l;
-      return XLSX.writeFile(wb, fn || ('BooksTable.' + (type || 'xlsx')));  //dl ?
-       // XLSX.write(wb, { bookType: type, bookSST: true, type: 'base64' }):
-         
+      new Promise(resolve =>{
+        setTimeout(() =>{
+          let l = this.limit;
+          this.limit = this.collections.length;
+          resolve(l)
+        }, 1000)
+      }).then((value) =>{
+        let elt = document.getElementById('tbl_exporttable_to_xls');
+        let wb = XLSX.utils.table_to_book(elt, { sheet: "sheet1" });
+        this.limit = value;
+        return XLSX.writeFile(wb, fn || ('BooksTable.' + (type || 'xlsx')));
+      }) 
     }
   },
   watch: {
