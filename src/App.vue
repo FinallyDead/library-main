@@ -46,7 +46,7 @@
           style="width: 30%;" 
           placeholder="Поиск по..."
           @input="search"
-          ref="searchByInput"
+          id="searchByInput"
           />
         </span>
         <select 
@@ -54,7 +54,7 @@
         class="form-select d-inline w-auto ms-2" 
         v-model="searchQuery"
         @change="search"
-        ref="searchByCategory"
+        id="searchByCategory"
         >
           <option
           v-for="str in categoryArray"
@@ -67,7 +67,7 @@
         class="form-select d-inline w-auto ms-2" 
         v-model="searchQuery"
         @change="search"
-        ref="searchByThemen"
+        id="searchByThemen"
         >
           <option
           v-for="str in themenArray"
@@ -95,8 +95,8 @@
   </div>
 
   <div v-if="categoryAttr == 1" style="margin-left: 15px;">
-    <button class="_btn" @click="if(addCategoryAttr == 1){addCategoryAttr = 0; deleteCategoryAttr = 0;}else{addCategoryAttr = 1; deleteCategoryAttr = 0;}">Добавить категорию</button>
-    <button class="_btn" style="margin-left: 10px;" @click="if(deleteCategoryAttr == 1){addCategoryAttr = 0; deleteCategoryAttr = 0;}else{addCategoryAttr = 0; deleteCategoryAttr = 1;}">Удалить категорию</button>
+    <button class="_btn" @click="if(addCategoryAttr == 1){addCategoryAttr = 0; deleteCategoryAttr = 0;}else{addCategoryAttr = 1; deleteCategoryAttr = 0;} this.addedCategory='';">Добавить категорию</button>
+    <button class="_btn" style="margin-left: 10px;" @click="if(deleteCategoryAttr == 1){addCategoryAttr = 0; deleteCategoryAttr = 0;}else{addCategoryAttr = 0; deleteCategoryAttr = 1;} this.addedCategory='';">Удалить категорию</button>
     <div v-if="addCategoryAttr == 1">
       <input class="form-control input" style="width: 40%; margin-left: 1px;" type="text" placeholder="Категория для добавления" v-model="this.addedCategory">
       <button class="_btn" @click="this.categoryArray.push(this.addedCategory); this.addCategoryAttr = 0;">Добавить категорию</button>
@@ -117,8 +117,8 @@
   </div>
 
   <div v-if="themenAttr == 1" style="margin-left: 15px;">
-    <button class="_btn" @click="if(addThemenAttr == 1){addThemenAttr = 0; deleteThemenAttr = 0;}else{addThemenAttr = 1; deleteThemenAttr = 0;}">Добавить тему</button>
-    <button class="_btn" style="margin-left: 10px;" @click="if(deleteThemenAttr == 1){addThemenAttr = 0; deleteThemenAttr = 0;}else{addThemenAttr = 0; deleteThemenAttr = 1;}">Удалить тему</button>
+    <button class="_btn" @click="if(addThemenAttr == 1){addThemenAttr = 0; deleteThemenAttr = 0;}else{addThemenAttr = 1; deleteThemenAttr = 0;} this.addedThemen='';">Добавить тему</button>
+    <button class="_btn" style="margin-left: 10px;" @click="if(deleteThemenAttr == 1){addThemenAttr = 0; deleteThemenAttr = 0;}else{addThemenAttr = 0; deleteThemenAttr = 1;} this.addedThemen='';">Удалить тему</button>
     <div v-if="addThemenAttr == 1">
       <input class="form-control input" style="width: 40%; margin-left: 1px;" type="text" placeholder="Тема для добавления" v-model="this.addedThemen">
       <button class="_btn" @click="this.themenArray.push(this.addedThemen); this.addThemenAttr = 0;">Добавить тему</button>
@@ -629,9 +629,10 @@ export default {
     }
     },
     search(){  
+      //  if (document.getElementById("searchByInput").value!= "" && (document.getElementById("searchByCategory").value!="" || document.getElementById("searchByThemen").value!="") && document.getElementById("searchByInput").value == (document.getElementById("searchByCategory").value || document.getElementById("searchByThemen").value)){
+      //    this.searchQuery = "";
+      //  }
       if (this.searchQuery == "" && this.sortOption == 0){
-        
-        
         this.searchedCollections = [];
         this.totalPages = Math.ceil(this.collections.length / this.limit);
         if (this.pastIndex>0)
@@ -641,8 +642,6 @@ export default {
         return;
       }
       if (this.searchQuery == "" && this.sortOption != 0){
-        
-
         this.searchedCollections = [];
         this.totalPages = Math.ceil(this.sortedCollections.length / this.limit);
         if (this.pastIndex>0)
@@ -652,8 +651,6 @@ export default {
         return;
       }
       if (this.searchOption != -1 && this.sortOption == 0 && this.searchQuery != ""){
-       
-
         if(this.searchOption instanceof String)
           this.searchedCollections = this.collections.filter(book => book[this.searchOption].includes(this.searchQuery));
         else
@@ -665,38 +662,41 @@ export default {
           this.collectionsPage = this.searchedCollections.slice(this.pastIndex, this.currentIndex);
         }
       if (this.searchOption != -1 && this.sortOption != 0 && this.searchQuery != ""){
-        
-
         if(this.searchOption instanceof String)
           this.searchedCollections = this.collections.filter(book => book[this.searchOption].includes(this.searchQuery));
         else
           this.searchedCollections = this.collections.filter(book => book[this.searchOption].toString().includes(this.searchQuery));
         this.totalPages = Math.ceil(this.searchedCollections.length / this.limit);
         this.sortBooks()
-        // if (this.pastIndex>0)
-        //   this.collectionsPage = this.searchedCollections.slice(this.pastIndex-1, this.currentIndex);
-        // else
-        //   this.collectionsPage = this.searchedCollections.slice(this.pastIndex, this.currentIndex);
       }
     },
     deleteCategoryFromArray(){
-      let count = this.collections.reduce((acc,el) =>{
-        if (el["category"] === this.deletedCategory)
-          ++acc;
-      }, 0)
-      if (count > 0){
-        this.categoryArray.splice(this.categoryArray.indexOf(this.deletedCategory),1);
-      }
-    },
-    deleteThemenFromArray(){
-      const count = this.collections.reduce((accumulator,currentValue) =>{
-        if (Object.values(currentValue)[4] === this.deletedThemen){
-          console.log(accumulator);
-          return ++accumulator;
+      let count = 0;
+      this.collections.reduce((accumulator,currentValue) =>{
+
+        if (Object.values(currentValue)[4] == this.deletedCategory){
+          ++count;
+          return;
         }
       }, 0)
-      console.log(count);
-      if (count > 0){
+      if (count == 0){
+        this.deleteCategoryAttr = 0;
+        this.categoryArray.splice(this.categoryArray.indexOf(this.deletedCategory),1);
+      }
+        
+      
+    },
+    deleteThemenFromArray(){
+      let count = 0;
+      this.collections.reduce((accumulator,currentValue) =>{
+
+        if (Object.values(currentValue)[5] == this.deletedThemen){
+          ++count;
+          return;
+        }
+      }, 0)
+      if (count == 0){
+        this.deleteThemenAttr = 0;
         this.themenArray.splice(this.themenArray.indexOf(this.deletedThemen),1);
       }
     },
