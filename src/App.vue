@@ -22,7 +22,7 @@
         style="width: 15%;"
         type="text" 
         :placeholder="this.limit" 
-        @keydown.enter="this.limit = $event.target.value"
+        @keydown.enter="this.limit = parseInt($event.target.value)"
         @keyup.enter="$event.target.value = '' "
         />
       </div>
@@ -146,14 +146,21 @@
   
 </div>
 
+<p v-if="errors.length" style="margin-top: 10px;" class="waitLabel">
+    <b>Пожалуйста исправьте указанные ошибки:</b>
+    <ul>
+      <li style="list-style-type: none;" v-for="error in errors" :key="error">{{ error }}</li>
+    </ul>
+</p>
+
 <form class="form" v-if="this.addVisible == 1 && closeAttr == 0" @submit.prevent>
   <div style="margin-top: 15px; align-self: flex-end;">
-    <button class="btn_in_div d-inline" style="background-color: rgba(28,28,28,0); border: 0;  font-weight: 600;" @click="this.closeAttr = 1;">X</button>
+    <button class="btn_in_div d-inline" style="background-color: rgba(28,28,28,0); border: 0;  font-weight: 600;" @click="this.closeAttr = 1; this.addVisible = 0">X</button>
   </div>
   <input class="form-control input" type="text" placeholder="Автор(-ы)" v-model="this.inputAuthor" />
   <input class="form-control input" type="text" placeholder="Название" v-model="this.inputName" />
-  <input class="form-control input" type="text" placeholder="Шкаф" v-model="this.inputCloset" />
-  <input class="form-control input" type="text" placeholder="Год" v-model="this.inputYear" />
+  <input class="form-control input" type="number" placeholder="Шкаф" v-model="this.inputCloset" />
+  <input class="form-control input" type="number" placeholder="Год" v-model="this.inputYear" />
   <select v-model="this.inputThemen" class="form-select from_select">
           <option value="" disabled selected>Тема</option>
           <option 
@@ -177,12 +184,12 @@
 
 <form class="form" v-if="this.changeVisible == 1 && closeAttr == 0" @submit.prevent>
   <div style="margin-top: 15px; align-self: flex-end;">
-    <button class="btn_in_div d-inline" style="background-color: rgba(28,28,28,0); border: 0;  font-weight: 600;" @click="this.closeAttr = 1;">X</button>
+    <button class="btn_in_div d-inline" style="background-color: rgba(28,28,28,0); border: 0;  font-weight: 600;" @click="this.closeAttr = 1; this.changeVisible = 0; ">X</button>
   </div>
   <input ref="changeAuthor" class="form-control input" type="text" placeholder="Автор(-ы)"  :value="this.collections[this.selectedRow-1].author"/>
   <input ref="changeName" class="form-control input" type="text" placeholder="Название"  :value="this.collections[this.selectedRow-1].name"/>
-  <input ref="changeCloset" class="form-control input" type="text" placeholder="Шкаф"  :value="this.collections[this.selectedRow-1].closet" />
-  <input ref="changeYear" class="form-control input" type="text" placeholder="Год"  :value="this.collections[this.selectedRow-1].year"/>
+  <input ref="changeCloset" class="form-control input" type="number" placeholder="Шкаф"  :value="this.collections[this.selectedRow-1].closet" />
+  <input ref="changeYear" class="form-control input" type="number" placeholder="Год"  :value="this.collections[this.selectedRow-1].year"/>
   <select ref="changeCategory" class="form-select from_select" :value="this.collections[this.selectedRow-1].category">
           <option 
           v-for="str in categoryArray" 
@@ -222,7 +229,7 @@
   >
     <div
     v-if="!((pageNumber > page+3) || (page-3 > pageNumber)) 
-    && totalPages > 20 
+    && totalPages >= 20 
     || (page === totalPages && pageNumber > page - 7)
     || (page === totalPages-1 && pageNumber > page - 6)
     || (page === totalPages-2 && pageNumber > page - 5)
@@ -281,6 +288,7 @@
         :class="{
           'activeItem': strings.id === this.selectedRow
         }"
+        style="user-select: none;"
         >
           <td 
           v-for="(item,key) in strings" 
@@ -321,8 +329,8 @@
     @click="event => changePage(event, pageNumber)"
     >
       <div
-      v-if="!((pageNumber > page+3) || (page-3 > pageNumber)) 
-      && totalPages > 20 
+      v-if="!((page-3 > pageNumber) || (pageNumber > page+3)) 
+      && totalPages >= 20 
       || (page === totalPages && pageNumber > page - 7)
       || (page === totalPages-1 && pageNumber > page - 6)
       || (page === totalPages-2 && pageNumber > page - 5)
@@ -408,7 +416,8 @@ export default {
       addCategoryAttr: 0,
       addThemenAttr: 0,
       deleteCategoryAttr: 0,
-      deleteThemenAttr: 0
+      deleteThemenAttr: 0,
+      errors: []
     };
   },
   methods: {
@@ -428,11 +437,15 @@ export default {
               
               tempArr = this.collections.map(x => x.category);
               tempArr =Array.from(new Set(tempArr))
-              this.categoryArray = tempArr.slice(0)
+              this.categoryArray = tempArr.filter(x => {
+                return x !== undefined
+              }).slice(0)
 
               tempArr = this.collections.map(x => x.themen);
               tempArr =Array.from(new Set(tempArr))
-              this.themenArray = tempArr.slice(0)
+              this.themenArray = tempArr.filter(x => {
+                return x !== undefined
+              }).slice(0)
 
               this.keyNames = Object.keys(this.collections[0]);
               this.selectValues = this.keyNames.slice(1);
@@ -482,7 +495,7 @@ export default {
       switch(side){
           case "lower":
             --this.page;
-            this.currentIndex = this.pastIndex;
+            this.currentIndex = parseInt(this.pastIndex);
             this.pastIndex = this.currentIndex - this.limit;
             if (this.sortOption == 0 && this.searchQuery == "")
               this.collectionsPage = this.collections.filter(p => p.id<=this.currentIndex && p.id>this.pastIndex);
@@ -495,7 +508,7 @@ export default {
           case "higher":
             ++this.page;
             this.pastIndex = parseInt(this.currentIndex);
-            this.currentIndex = parseInt(this.currentIndex) + this.limit;
+            this.currentIndex = parseInt(this.currentIndex) + parseInt(this.limit);
             if (this.sortOption == 0 && this.searchQuery == "")
               this.collectionsPage = this.collections.filter(p => p.id<=this.currentIndex && p.id>this.pastIndex);
             else if (this.searchQuery != "" && this.searchOption != -1)
@@ -535,28 +548,57 @@ export default {
         }
     },
     addIntoTable(){
-      let lastElement = this.collections.at(-1);
-      this.collections.push({id: lastElement.id+1 , author: this.inputAuthor, name: this.inputName, 
-        closet: this.inputCloset, year: this.inputYear, themen: this.inputThemen, category: this.inputCategory });
-      this.selectedRow = null;
-      if (this.totalPages < Math.ceil(this.collections.length / this.limit)){
-        this.page++;
-        this.currentIndex + this.limit;
-        this.pastIndex + this.limit;
+      if (this.inputAuthor && this.inputName && this.inputCloset && this.inputYear && this.inputThemen && this.inputCategory){
+        this.errors = [];
+        let lastElement = this.collections.at(-1);
+        this.collections.push({id: lastElement.id+1 , author: this.inputAuthor, name: this.inputName, 
+          year: this.inputYear, category: this.inputCategory , themen: this.inputThemen, closet: this.inputCloset});
+        this.selectedRow = null;
+        // if (this.totalPages < Math.ceil(this.collections.length / this.limit)){
+        //   this.page++;
+        //   this.currentIndex + this.limit;
+        //   this.pastIndex + this.limit;
+        // }
+        this.inputAuthor = "";
+        this.inputName = "";
+        this.inputCloset = "";
+        this.inputYear = "";
+        this.inputThemen = "";
+        this.inputCategory = "";
+        
+        this.addVisible = 0;
+        this.changeVisible = 0;
+
+        if (this.sortOption == 0 && this.searchQuery == ""){
+          this.totalPages = Math.ceil(this.collections.length / this.limit);
+          this.collectionsPage = this.collections.filter(p => p.id<=this.currentIndex && p.id>this.pastIndex);
+        }
+            else if (this.searchQuery != "" && this.searchOption != -1)
+                this.search();
+              else{
+                this.totalPages = Math.ceil(this.sortedCollections.length / this.limit);
+                this.sortBooks();
+              }
+                
+        // if (this.sortOption == 0)
+        //   this.collectionsPage = this.collections.filter(p => p.id<=this.currentIndex && p.id>this.pastIndex);
+        // else 
+        //   this.sortBooks();
+      }else{
+        this.errors = []
+        if (!this.inputAuthor)
+          this.errors.push("Заполните имя(-ена) автора(-ов)");
+        if (!this.inputName)
+          this.errors.push("Заполните название книги");
+        if (!this.inputCloset)
+          this.errors.push("Заполните номер шкафа");
+        if (!this.inputYear)
+          this.errors.push("Заполните год выпуска");
+        if (!this.inputThemen)
+          this.errors.push("Выберите тему");
+        if (!this.inputCategory)
+          this.errors.push("Выберите категорию");
       }
-      this.inputAuthor = "";
-      this.inputName = "";
-      this.inputCloset = "";
-      this.inputYear = "";
-      this.inputThemen = "";
-      this.inputCategory = "";
-      this.totalPages = Math.ceil(this.collections.length / this.limit);
-      this.addVisible = 0;
-      this.changeVisible = 0;
-      if (this.sortOption == 0)
-        this.collectionsPage = this.collections.filter(p => p.id<=this.currentIndex && p.id>this.pastIndex);
-      else 
-        this.sortBooks();
     },
     removeFromTable(){
       let arrPart = this.collections.splice(this.collections.indexOf(this.collections.find(x => x.id == this.selectedRow))+1,
@@ -605,10 +647,11 @@ export default {
         else{
           if (this.searchQuery == "" || this.searchOption == 0){
             this.sortedCollections = this.collections.slice(0)
-            if (this.sortOption=='closet')
+            if (this.sortOption=='closet' || this.sortOption=='year')
               this.sortedCollections.sort((book1, book2) => book1[this.sortOption]-book2[this.sortOption]);
-            else
+            else{
               this.sortedCollections.sort((book1, book2) => book1[this.sortOption].localeCompare(book2[this.sortOption]));
+            }
             if (this.pastIndex>0)
               this.collectionsPage = this.sortedCollections.slice(this.pastIndex-1, this.currentIndex);
             else
@@ -616,7 +659,7 @@ export default {
           }
           if (this.searchQuery != "" && this.searchOption != 0){
             this.sortedCollections = this.searchedCollections.slice(0)
-            if (this.sortOption=='closet')
+            if (this.sortOption=='closet' || this.sortOption=='year')
               this.sortedCollections.sort((book1, book2) => book1[this.sortOption]-book2[this.sortOption]);
             else
               this.sortedCollections.sort((book1, book2) => book1[this.sortOption].localeCompare(book2[this.sortOption]));
@@ -641,15 +684,13 @@ export default {
           this.collectionsPage = this.collections.slice(this.pastIndex, this.currentIndex);
         return;
       }
+      
       if (this.searchQuery == "" && this.sortOption != 0){
         this.searchedCollections = [];
         this.totalPages = Math.ceil(this.sortedCollections.length / this.limit);
-        if (this.pastIndex>0)
-          this.sortedCollections = this.sortedCollections.slice(this.pastIndex-1, this.currentIndex);
-        else
-          this.collectionsPage = this.sortedCollections.slice(this.pastIndex, this.currentIndex);
-        return;
+        this.sortBooks()
       }
+      
       if (this.searchOption != -1 && this.sortOption == 0 && this.searchQuery != ""){
         if(this.searchOption instanceof String)
           this.searchedCollections = this.collections.filter(book => book[this.searchOption].includes(this.searchQuery));
@@ -661,6 +702,7 @@ export default {
         else
           this.collectionsPage = this.searchedCollections.slice(this.pastIndex, this.currentIndex);
         }
+      
       if (this.searchOption != -1 && this.sortOption != 0 && this.searchQuery != ""){
         if(this.searchOption instanceof String)
           this.searchedCollections = this.collections.filter(book => book[this.searchOption].includes(this.searchQuery));
@@ -719,7 +761,13 @@ export default {
       limit(){
         this.totalPages = Math.ceil(this.collections.length / this.limit);
         this.currentIndex = this.limit;
-        this.collectionsPage = this.collections.filter(p => p.id<=this.currentIndex && p.id>this.pastIndex);
+        if (this.sortOption == 0 && this.searchQuery == "")
+              this.collectionsPage = this.collections.filter(p => p.id<=this.currentIndex && p.id>this.pastIndex);
+            else if (this.searchQuery != "" && this.searchOption != -1)
+                this.search();
+              else
+                this.sortBooks();
+        //this.collectionsPage = this.collections.filter(p => p.id<=this.currentIndex && p.id>this.pastIndex);
       }
   },
   
@@ -744,6 +792,13 @@ export default {
   border: 1px solid black;
   padding: 10px;
   margin-left: 5px;
+  user-select: none;
+}
+.page:hover{
+  background-color: rgb(0, 211, 211);
+  color: rgb(0, 58, 124);
+  text-shadow: 0 0 1px rgb(0, 58, 124);
+  cursor: pointer;
 }
 .current-page{
   border: 2px solid teal;
@@ -793,11 +848,19 @@ export default {
   color: #4285B4;
   border: 1px solid #4285B4;
 }
+._btn:hover{
+  background-color: #86c5f2;
+  color: black;
+}
 .btn_in_div{
   padding: 10px 15px;
   background-color: none;
   color: #4285B4;
   border: 1px solid #4285B4;
+}
+.btn_in_div:hover{
+  background-color: #86c5f2;
+  color: black;
 }
 .from_select{
   border: 1px solid #4285B4;
