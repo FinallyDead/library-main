@@ -138,7 +138,7 @@
     </div>
   </div>
 </div>
-<div v-if="this.selectedRow" style="margin-left: 15px;" >
+<div v-if="this.selectedRow && !(collections.length > 0 && collectionsPage.length == 0)" style="margin-left: 15px;" >
   
     <button class="_btn " @click="this.addVisible = 1; this.changeVisible = 0; this.closeAttr = 0;">Добавить</button>
     <button class="_btn " style="margin-left:15px;" @click="this.changeVisible = 1; this.addVisible = 0; this.closeAttr = 0;">Изменить</button>
@@ -380,6 +380,7 @@ export default {
   data() {
     return {
       file: null,
+      fileName: "",
       keyNames: [],
       collections: [],
       collectionsPage: [],
@@ -423,6 +424,7 @@ export default {
   methods: {
     onChange(event) {
       this.file = event.target.files ? event.target.files[0] : null;
+      this.fileName = this.file.name;
       const reader = new FileReader();
       reader.onload = (e) => {
               
@@ -434,7 +436,11 @@ export default {
               
               let tempArr = [];
               this.collections = JSON.parse(JSON.stringify(ws));
-              
+              if ("limit" in this.collections[0]){
+                this.limit = this.collections[0].limit;
+                delete this.collections[0].limit;
+              }
+                 
               tempArr = this.collections.map(x => x.category);
               tempArr =Array.from(new Set(tempArr))
               this.categoryArray = tempArr.filter(x => {
@@ -646,27 +652,23 @@ export default {
         }
         else{
           if (this.searchQuery == "" || this.searchOption == 0){
+            this.selectedRow = 0;
             this.sortedCollections = this.collections.slice(0)
             if (this.sortOption=='closet' || this.sortOption=='year')
               this.sortedCollections.sort((book1, book2) => book1[this.sortOption]-book2[this.sortOption]);
             else{
               this.sortedCollections.sort((book1, book2) => book1[this.sortOption].localeCompare(book2[this.sortOption]));
             }
-            if (this.pastIndex>0)
-              this.collectionsPage = this.sortedCollections.slice(this.pastIndex-1, this.currentIndex);
-            else
               this.collectionsPage = this.sortedCollections.slice(this.pastIndex, this.currentIndex);
           }
           if (this.searchQuery != "" && this.searchOption != 0){
+            this.selectedRow = 0;
             this.sortedCollections = this.searchedCollections.slice(0)
             if (this.sortOption=='closet' || this.sortOption=='year')
               this.sortedCollections.sort((book1, book2) => book1[this.sortOption]-book2[this.sortOption]);
             else
               this.sortedCollections.sort((book1, book2) => book1[this.sortOption].localeCompare(book2[this.sortOption]));
-            if (this.pastIndex>0)
-              this.collectionsPage = this.sortedCollections.slice(this.pastIndex-1, this.currentIndex);
-            else
-              this.collectionsPage = this.sortedCollections.slice(this.pastIndex, this.currentIndex);
+            this.collectionsPage = this.sortedCollections.slice(this.pastIndex, this.currentIndex);
           }
         }
     }
@@ -678,32 +680,29 @@ export default {
       if (this.searchQuery == "" && this.sortOption == 0){
         this.searchedCollections = [];
         this.totalPages = Math.ceil(this.collections.length / this.limit);
-        if (this.pastIndex>0)
-          this.collectionsPage = this.collections.slice(this.pastIndex-1, this.currentIndex);
-        else
-          this.collectionsPage = this.collections.slice(this.pastIndex, this.currentIndex);
+        this.collectionsPage = this.collections.slice(this.pastIndex, this.currentIndex);
         return;
       }
       
       if (this.searchQuery == "" && this.sortOption != 0){
+        this.selectedRow = 0;
         this.searchedCollections = [];
+        this.sortBooks();
         this.totalPages = Math.ceil(this.sortedCollections.length / this.limit);
-        this.sortBooks()
       }
       
       if (this.searchOption != -1 && this.sortOption == 0 && this.searchQuery != ""){
+        this.selectedRow = 0;
         if(this.searchOption instanceof String)
           this.searchedCollections = this.collections.filter(book => book[this.searchOption].includes(this.searchQuery));
         else
           this.searchedCollections = this.collections.filter(book => book[this.searchOption].toString().includes(this.searchQuery));
         this.totalPages = Math.ceil(this.searchedCollections.length / this.limit);
-        if (this.pastIndex>0)
-          this.collectionsPage = this.searchedCollections.slice(this.pastIndex-1, this.currentIndex);
-        else
-          this.collectionsPage = this.searchedCollections.slice(this.pastIndex, this.currentIndex);
+        this.collectionsPage = this.searchedCollections.slice(this.pastIndex, this.currentIndex);
         }
       
       if (this.searchOption != -1 && this.sortOption != 0 && this.searchQuery != ""){
+        this.selectedRow = 0;
         if(this.searchOption instanceof String)
           this.searchedCollections = this.collections.filter(book => book[this.searchOption].includes(this.searchQuery));
         else
@@ -745,24 +744,49 @@ export default {
     exportToExcel(type, fn){
       new Promise(resolve =>{
         setTimeout(() =>{
-          let l = this.limit;
+          let originOptions = [];
+          let origL = this.limit;
+          originOptions.push(origL);
+
+          let origSearchOption = this.searchOption;
+          originOptions.push(origSearchOption);
+
+          let origSortOption = this.sortOption;
+          originOptions.push(origSortOption);
+
+          let origSearchQuery = this.searchQuery;
+          originOptions.push(origSearchQuery);
+
           this.limit = this.collections.length;
-          resolve(l)
+          this.searchOption = 0;
+          this.sortOption = 0;
+          this.searchQuery = "";
+
+          this.collections[0].limit = origL;
+          this.keyNames.push("limit")
+
+          resolve(originOptions)
         }, 1000)
       }).then((value) =>{
         let elt = document.getElementById('tbl_exporttable_to_xls');
         let wb = XLSX.utils.table_to_book(elt, { sheet: "sheet1" });
-        this.limit = value;
-        return XLSX.writeFile(wb, fn || ('BooksTable.' + (type || 'xlsx')));
+        this.limit = value[0];
+        this.searchOption = value[1];
+        this.sortOption = value[2];
+        this.searchQuery = value[3];
+        delete this.collections[0].limit;
+        this.keyNames.pop();
+        return XLSX.writeFile(wb, fn || (this.fileName));
       }) 
     }
   },
   watch: {
       limit(){
-        this.totalPages = Math.ceil(this.collections.length / this.limit);
         this.currentIndex = this.limit;
-        if (this.sortOption == 0 && this.searchQuery == "")
+        if (this.sortOption == 0 && this.searchQuery == ""){
               this.collectionsPage = this.collections.filter(p => p.id<=this.currentIndex && p.id>this.pastIndex);
+              this.totalPages = Math.ceil(this.collections.length / this.limit);
+        }
             else if (this.searchQuery != "" && this.searchOption != -1)
                 this.search();
               else
