@@ -1,22 +1,13 @@
 <template>
 <div class="row mb-5 align-items-start">
-  <div class="col-sm" >
-    <img src="./assets/logoFinal.png" class="logo" alt="Responsive image" v-if="page == 1">
+  <div class="logo">
+    <img src="./assets/logoFinal.png" class="" alt="Responsive image" v-if="page == 1">
   </div>
-  <div class="col-sm">
-    <input v-if="page == 1" type="file" class="form-control inputFile" @change="onChange" />
-    <div style="margin-top: 5px;">
-      <div v-if="searchedCollections.length == 0 && searchQuery == '' || searchOption == -1">
-        Количество записей: {{ this.collections.length }}
-      </div>
-      <div v-if="searchedCollections.length >= 0 && searchQuery != '' && searchOption != -1">
-        Количество записей: {{ this.searchedCollections.length }}
-      </div>
-      <div>
-        Количество страниц: {{ this.totalPages }}  
-      </div>
-      <div v-if="page == 1">
-        <label class="d-inline">Количество записей на одной странице:</label>  
+  <div class="col-sm me-5">
+    <div class="d-flex">
+      <input v-if="page == 1" type="file" class="form-control inputFile" @change="onChange" />
+      <div v-if="page == 1" style="margin-top: 48px;">
+        <label class="d-inline">Кол-во записей на странице:</label>  
         <input 
         class="form-control d-inline ms-2" 
         style="width: 15%;"
@@ -26,6 +17,18 @@
         @keyup.enter="$event.target.value = '' "
         />
       </div>
+    </div>
+    <div style="margin-top: 5px;">
+      <div class="d-flex">
+        Количество страниц: {{ this.totalPages }}
+        <div v-if="searchedCollections.length == 0 && searchQuery == '' || searchOption == -1"  style="margin-left: 9.2%;">
+          Количество записей: {{ this.collections.length }}
+        </div>
+        <div v-if="searchedCollections.length >= 0 && searchQuery != '' && searchOption != -1" class="ms-5">
+          Количество записей: {{ this.searchedCollections.length }}
+        </div>  
+      </div>
+      
       <div v-if="collections.length > 0 && page == 1">
         <label class="d-inline">Сортировка по:</label>
         <select class="form-select d-inline w-auto ms-2" v-model="sortOption" @change="sortBooks">
@@ -36,60 +39,57 @@
           :value="keyFromArr"
           >{{ keyFromArr }}</option>
         </select>
-      </div>
-      <div v-if="collections.length > 0 && page == 1" class="mt-2">
-        <label>Поиск по столбцу:</label>
-        <span v-if="this.searchOption != 'category' && this.searchOption != 'themen'">
-          <input 
+        <div class="ms-2 d-inline">
+          <label>Поиск по столбцу:</label>
+          <span v-if="this.searchOption != 'category' && this.searchOption != 'themen'">
+            <input 
+            v-model="searchQuery"
+            class="form-control d-inline ms-2"
+            style="width: 30%;" 
+            placeholder="Поиск по..."
+            @input="search"
+            id="searchByInput"
+            />
+          </span>
+          <select 
+          v-if="collections.length > 0 && page == 1 && this.searchOption == 'category'" 
+          class="form-select d-inline w-auto ms-2" 
           v-model="searchQuery"
-          class="form-control d-inline ms-2"
-          style="width: 30%;" 
-          placeholder="Поиск по..."
-          @input="search"
-          id="searchByInput"
-          />
-        </span>
-        <select 
-        v-if="collections.length > 0 && page == 1 && this.searchOption == 'category'" 
-        class="form-select d-inline w-auto ms-2" 
-        v-model="searchQuery"
-        @change="search"
-        id="searchByCategory"
-        >
-          <option
-          v-for="str in categoryArray"
-          :key="str"
-          :value="str"
-          >{{ str }} </option>
-        </select>
-        <select 
-        v-if="collections.length > 0 && page == 1 && this.searchOption == 'themen'" 
-        class="form-select d-inline w-auto ms-2" 
-        v-model="searchQuery"
-        @change="search"
-        id="searchByThemen"
-        >
-          <option
-          v-for="str in themenArray"
-          :key="str"
-          :value="str"
-          >{{ str }} </option>
-        </select>
-        <select v-model="searchOption" class="form-select d-inline w-auto ms-2" @change="search">
-          <option 
-          v-for="str in keyNames" 
-          :key="str"
-          :value="str"
-          > {{ str }}</option>
-        </select>
+          @change="search"
+          id="searchByCategory"
+          >
+            <option
+            v-for="str in categoryArray"
+            :key="str"
+            :value="str"
+            >{{ str }} </option>
+          </select>
+          <select 
+          v-if="collections.length > 0 && page == 1 && this.searchOption == 'themen'" 
+          class="form-select d-inline w-auto ms-2" 
+          v-model="searchQuery"
+          @change="search"
+          id="searchByThemen"
+          >
+            <option
+            v-for="str in themenArray"
+            :key="str"
+            :value="str"
+            >{{ str }} </option>
+          </select>
+          <select v-model="searchOption" class="form-select d-inline w-auto ms-2" @change="search">
+            <option 
+            v-for="str in keyNames" 
+            :key="str"
+            :value="str"
+            > {{ str }}</option>
+          </select>
+        </div>
       </div>
       <div v-if="this.collectionsPage.length > 0 && page == 1">
         <button class="_btn" @click="if(categoryAttr == 1){categoryAttr = 0; themenAttr = 0;}else{categoryAttr = 1; themenAttr = 0;}">Список категорий</button>
-        <button class="_btn" @click="if(themenAttr == 1){categoryAttr = 0; themenAttr = 0;}else{categoryAttr = 0; themenAttr = 1;}" style="margin-left: 10px;">Список тем</button>
-      </div>
-      
-      <div v-if="this.collectionsPage.length > 0 && page == 1">
-        <button class="_btn" @click="exportToExcel('xlsx')"> Сохранить таблицу </button>
+        <button class="_btn ms-2" @click="if(themenAttr == 1){categoryAttr = 0; themenAttr = 0;}else{categoryAttr = 0; themenAttr = 1;}" >Список тем</button>
+        <button class="_btn ms-2" @click="exportToExcel('xlsx')"> Сохранить таблицу </button>
       </div>
     </div>
   </div>
@@ -436,6 +436,7 @@ export default {
               
               let tempArr = [];
               this.collections = JSON.parse(JSON.stringify(ws));
+              
               if ("limit" in this.collections[0]){
                 this.limit = this.collections[0].limit;
                 delete this.collections[0].limit;
@@ -458,6 +459,15 @@ export default {
               this.totalPages = Math.ceil(this.collections.length / this.limit);
               this.currentIndex = this.limit;
               this.collectionsPage = this.collections.filter(p => p.id<=this.currentIndex && p.id>this.pastIndex);
+              this.keyNames.forEach(x =>{
+                (x == 'id') && (this.keyNames[this.keyNames.indexOf(x)] ='номер') ||
+                (x == 'author') && (this.keyNames[this.keyNames.indexOf(x)] ='автор') ||
+                (x == 'name') && (this.keyNames[this.keyNames.indexOf(x)] ='название') ||
+                (x == 'year') && (this.keyNames[this.keyNames.indexOf(x)] ='год') ||
+                (x == 'themen') && (this.keyNames[this.keyNames.indexOf(x)] ='тема') ||
+                (x == 'category') && (this.keyNames[this.keyNames.indexOf(x)] ='категория') ||
+                (x == 'closet') && (this.keyNames[this.keyNames.indexOf(x)] ='шкаф')  
+              })
             };
 
             reader.readAsBinaryString(this.file);
@@ -560,11 +570,6 @@ export default {
         this.collections.push({id: lastElement.id+1 , author: this.inputAuthor, name: this.inputName, 
           year: this.inputYear, category: this.inputCategory , themen: this.inputThemen, closet: this.inputCloset});
         this.selectedRow = null;
-        // if (this.totalPages < Math.ceil(this.collections.length / this.limit)){
-        //   this.page++;
-        //   this.currentIndex + this.limit;
-        //   this.pastIndex + this.limit;
-        // }
         this.inputAuthor = "";
         this.inputName = "";
         this.inputCloset = "";
@@ -585,11 +590,6 @@ export default {
                 this.totalPages = Math.ceil(this.sortedCollections.length / this.limit);
                 this.sortBooks();
               }
-                
-        // if (this.sortOption == 0)
-        //   this.collectionsPage = this.collections.filter(p => p.id<=this.currentIndex && p.id>this.pastIndex);
-        // else 
-        //   this.sortBooks();
       }else{
         this.errors = []
         if (!this.inputAuthor)
@@ -674,9 +674,6 @@ export default {
     }
     },
     search(){  
-      //  if (document.getElementById("searchByInput").value!= "" && (document.getElementById("searchByCategory").value!="" || document.getElementById("searchByThemen").value!="") && document.getElementById("searchByInput").value == (document.getElementById("searchByCategory").value || document.getElementById("searchByThemen").value)){
-      //    this.searchQuery = "";
-      //  }
       if (this.searchQuery == "" && this.sortOption == 0){
         this.searchedCollections = [];
         this.totalPages = Math.ceil(this.collections.length / this.limit);
@@ -791,7 +788,6 @@ export default {
                 this.search();
               else
                 this.sortBooks();
-        //this.collectionsPage = this.collections.filter(p => p.id<=this.currentIndex && p.id>this.pastIndex);
       }
   },
   
@@ -800,10 +796,11 @@ export default {
 
 <style>
 .logo{
-  height: 80%;
-  width: 60%;
+  height: 70%;
+  width: fit-content;
   margin-top: 15px;
   margin-left: 15px;
+  padding: 0;
 }
 .page__wrapper{
   display: flex;
@@ -842,9 +839,9 @@ export default {
   color: red;
 }
 .inputFile{
-  margin-right: auto;
+  margin-right: 5px;
   margin-top: 48px;
-  width: 75%;
+  width: 32%;
   height: 75%;
 }
 .activeItem{
