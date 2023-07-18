@@ -418,7 +418,16 @@ export default {
       addThemenAttr: 0,
       deleteCategoryAttr: 0,
       deleteThemenAttr: 0,
-      errors: []
+      errors: [],
+      internationalNames:{
+        "номер":"id",
+        "автор":"author",
+        "название":"name",
+        "год":"year",
+        "тема":"themen",
+        "категория":"category",
+        "шкаф":"closet"
+    }
     };
   },
   methods: {
@@ -673,7 +682,10 @@ export default {
         }
     }
     },
-    search(){  
+    search(){ 
+      //меняем русское слово на английское чтобы потом объект мог вести поиск по своему полю(ибо они на английском)
+      this.searchOption=Object.keys(this.internationalNames).includes(this.searchOption)? this.internationalNames[this.searchOption]:this.searchOption
+
       if (this.searchQuery == "" && this.sortOption == 0){
         this.searchedCollections = [];
         this.totalPages = Math.ceil(this.collections.length / this.limit);
@@ -690,14 +702,16 @@ export default {
       
       if (this.searchOption != -1 && this.sortOption == 0 && this.searchQuery != ""){
         this.selectedRow = 0;
-        if(this.searchOption instanceof String)
+        if(this.searchOption instanceof String){
           this.searchedCollections = this.collections.filter(book => book[this.searchOption].includes(this.searchQuery));
+        
+        }
         else
           this.searchedCollections = this.collections.filter(book => book[this.searchOption].toString().includes(this.searchQuery));
         this.totalPages = Math.ceil(this.searchedCollections.length / this.limit);
         this.collectionsPage = this.searchedCollections.slice(this.pastIndex, this.currentIndex);
         }
-      
+      console.log(321123)
       if (this.searchOption != -1 && this.sortOption != 0 && this.searchQuery != ""){
         this.selectedRow = 0;
         if(this.searchOption instanceof String)
